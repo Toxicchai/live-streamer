@@ -3,10 +3,10 @@ name: Cloud Live Streamer
 on:
   workflow_dispatch:
     inputs:
-      video_name:
-        description: 'Name of video file in repo (e.g. video.mp4)'
+      stream_source:
+        description: 'Google Drive Share Link OR File Name (e.g. video.mp4)'
         required: true
-        default: 'video.mp4'
+        default: ''
       loop_stream:
         description: 'Loop continuously? (true/false)'
         required: true
@@ -17,17 +17,35 @@ jobs:
   broadcast:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code & Video
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install FFmpeg
-        run: sudo apt update && sudo apt install -y ffmpeg
+      - name: Install Tools (FFmpeg & gdown)
+        run: |
+          sudo apt update
+          sudo apt install -y ffmpeg python3-pip
+          pip3 install --break-system-packages gdown
+
+      - name: Prepare Video File
+        id: prep
+        run: |
+          SOURCE="${{ github.event.inputs.stream_source }}"
+          
+          # Check if input is a Google Drive link
+          if [[ "$SOURCE" =~ drive.google.com ]]; then
+            echo "Detected Google Drive link. Downloading video to cloud runner..."
+            gdown "$SOURCE" -O stream_video.mp4 --fuzzy
+            echo "video_file=stream_video.mp4" >> $GITHUB_OUTPUT
+          else
+            echo "Using file directly from repository: $SOURCE"
+            echo "video_file=$SOURCE" >> $GITHUB_OUTPUT
+          fi
 
       - name: Start Live Stream to YouTube
         env:
           STREAM_KEY: ${{ secrets.STREAM_KEY }}
-          VIDEO: ${{ github.event.inputs.video_name }}
           LOOP: ${{ github.event.inputs.loop_stream }}
+          VIDEO_FILE: ${{ steps.prep.outputs.video_file }}
         run: |
           if [ "$LOOP" = "true" ]; then
             LOOP_ARG="-stream_loop -1"
@@ -35,5 +53,5 @@ jobs:
             LOOP_ARG="-stream_loop 0"
           fi
 
-          echo "Starting live broadcast to YouTube for $VIDEO..."
-          ffmpeg -re $LOOP_ARG -i "$VIDEO" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+          echo "Starting live broadcast to YouTube using $VIDEO_FILE..."
+          ffmpeg -re $LOOP_ARG -i "$VIDEO_FILE" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
