@@ -1,0 +1,39 @@
+name: Cloud Live Streamer
+
+on:
+  workflow_dispatch:
+    inputs:
+      video_name:
+        description: 'Name of video file in repo (e.g. video.mp4)'
+        required: true
+        default: 'video.mp4'
+      loop_stream:
+        description: 'Loop continuously? (true/false)'
+        required: true
+        default: 'false'
+        type: boolean
+
+jobs:
+  broadcast:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code & Video
+        uses: actions/checkout@v4
+
+      - name: Install FFmpeg
+        run: sudo apt update && sudo apt install -y ffmpeg
+
+      - name: Start Live Stream to YouTube
+        env:
+          STREAM_KEY: ${{ secrets.STREAM_KEY }}
+          VIDEO: ${{ github.event.inputs.video_name }}
+          LOOP: ${{ github.event.inputs.loop_stream }}
+        run: |
+          if [ "$LOOP" = "true" ]; then
+            LOOP_ARG="-stream_loop -1"
+          else
+            LOOP_ARG="-stream_loop 0"
+          fi
+
+          echo "Starting live broadcast to YouTube for $VIDEO..."
+          ffmpeg -re $LOOP_ARG -i "$VIDEO" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
