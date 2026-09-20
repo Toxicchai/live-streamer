@@ -33,7 +33,7 @@ jobs:
         id: prep
         run: |
           # Yahan apna Google Drive link default set kar diya hai taaki automatic run mein link mangna na pade
-          DEFAULT_DRIVE_LINK="PASTE_YOUR_GOOGLE_DRIVE_LINK_HERE"
+          DEFAULT_DRIVE_LINK="https://drive.google.com/file/d/1MbBfoyZJ01WVLIL305kTrkdZnF0-Xi9K/view?usp=drivesdk"
           
           SOURCE="${{ github.event.inputs.stream_source }}"
           if [ -z "$SOURCE" ]; then
