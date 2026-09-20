@@ -34,7 +34,7 @@ jobs:
           # Check if input is a Google Drive link
           if [[ "$SOURCE" =~ drive.google.com ]]; then
             echo "Detected Google Drive link. Downloading video to cloud runner..."
-            gdown "$SOURCE" -O stream_video.mp4 --fuzzy
+            gdown "$SOURCE" -O stream_video.mp4 
             echo "video_file=stream_video.mp4" >> $GITHUB_OUTPUT
           else
             echo "Using file directly from repository: $SOURCE"
