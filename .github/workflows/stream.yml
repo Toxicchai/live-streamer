@@ -2,19 +2,14 @@ name: Cloud Live Streamer
 
 on:
   schedule:
-    # Yeh automatically Indian Time ke mutabiq subah 4:55 AM par trigger hoga
-    - cron: '25 23 * * *'
+    # शाम 6:55 PM IST (13:25 UTC) पर अपने आप ट्रिगर होगा
+    - cron: '25 13 * * *'
   workflow_dispatch:
     inputs:
       stream_source:
-        description: 'Google Drive Link OR repository filename'
+        description: 'Google Drive Link'
         required: false
         default: ''
-      loop_stream:
-        description: 'Loop continuously? (true/false)'
-        required: false
-        default: 'false'
-        type: boolean
 
 jobs:
   broadcast:
@@ -32,35 +27,22 @@ jobs:
       - name: Prepare Video File
         id: prep
         run: |
-          # Yahan apna Google Drive link default set kar diya hai taaki automatic run mein link mangna na pade
-          DEFAULT_DRIVE_LINK="https://drive.google.com/file/d/1MbBfoyZJ01WVLIL305kTrkdZnF0-Xi9K/view?usp=drivesdk"
+          # यहाँ अपनी 2 मिनट की गायत्री मंत्र वीडियो का Google Drive लिंक डालें
+          DEFAULT_LINK="PASTE_YOUR_GAYATRI_MANTRA_DRIVE_LINK_HERE"
           
           SOURCE="${{ github.event.inputs.stream_source }}"
           if [ -z "$SOURCE" ]; then
-            SOURCE="$DEFAULT_DRIVE_LINK"
+            SOURCE="$DEFAULT_LINK"
           fi
 
-          if [[ "$SOURCE" =~ drive.google.com ]]; then
-            echo "Downloading video from Google Drive..."
-            gdown "$SOURCE" -O stream_video.mp4
-            echo "video_file=stream_video.mp4" >> $GITHUB_OUTPUT
-          else
-            echo "Using local file: $SOURCE"
-            echo "video_file=$SOURCE" >> $GITHUB_OUTPUT
-          fi
+          echo "Downloading video from Google Drive..."
+          gdown "$SOURCE" -O stream_video.mp4
+          echo "video_file=stream_video.mp4" >> $GITHUB_OUTPUT
 
-      - name: Start Live Stream to YouTube
+      - name: Start Continuous Loop Stream to YouTube
         env:
           STREAM_KEY: ${{ secrets.STREAM_KEY }}
-          LOOP: ${{ github.event.inputs.loop_stream }}
           VIDEO_FILE: ${{ steps.prep.outputs.video_file }}
         run: |
-          if [ "$LOOP" = "true" ]; then
-            LOOP_ARG="-stream_loop -1"
-          else
-            LOOP_ARG="-stream_loop 0"
-          fi
-
-          echo "Starting live broadcast to YouTube..."
-          ffmpeg -re $LOOP_ARG -i "$VIDEO_FILE" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
-          
+          echo "Broadcasting video in endless loop to YouTube..."
+          ffmpeg -re -stream_loop -1 -i "$VIDEO_FILE" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
