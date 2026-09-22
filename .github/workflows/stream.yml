@@ -1,9 +1,6 @@
 name: Cloud Live Streamer
 
 on:
-  schedule:
-    # शाम 6:55 PM IST (13:25 UTC) पर अपने आप ट्रिगर होगा
-    - cron: '25 13 * * *'
   workflow_dispatch:
     inputs:
       stream_source:
@@ -27,7 +24,7 @@ jobs:
       - name: Prepare Video File
         id: prep
         run: |
-          # यहाँ अपनी 2 मिनट की गायत्री मंत्र वीडियो का Google Drive लिंक डालें
+          # Yahan apna Gayatri Mantra video ka Google Drive link paste karein
           DEFAULT_LINK="https://drive.google.com/file/d/1tDmVL2VWrAPajhlllaIFGQzV2UkYhUM0/view?usp=drivesdk"
           
           SOURCE="${{ github.event.inputs.stream_source }}"
@@ -45,4 +42,9 @@ jobs:
           VIDEO_FILE: ${{ steps.prep.outputs.video_file }}
         run: |
           echo "Broadcasting video in endless loop to YouTube..."
-          ffmpeg -re -stream_loop -1 -i "$VIDEO_FILE" -c:v copy -c:a aac -b:a 128k -ar 44100 -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+          ffmpeg -re -stream_loop -1 -i "$VIDEO_FILE" \
+            -c:v libx264 -preset veryfast -b:v 4500k -maxrate 5000k -bufsize 10000k -pix_fmt yuv420p -g 60 \
+            -c:a aac -b:a 128k -ar 44100 \
+            -flvflags no_duration_filesize \
+            -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+            
