@@ -28,7 +28,7 @@ jobs:
         id: prep
         run: |
           # यहाँ अपनी 2 मिनट की गायत्री मंत्र वीडियो का Google Drive लिंक डालें
-          DEFAULT_LINK="PASTE_YOUR_GAYATRI_MANTRA_DRIVE_LINK_HERE"
+          DEFAULT_LINK="https://drive.google.com/file/d/1tDmVL2VWrAPajhlllaIFGQzV2UkYhUM0/view?usp=drivesdk"
           
           SOURCE="${{ github.event.inputs.stream_source }}"
           if [ -z "$SOURCE" ]; then
